@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech-to-Text</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 480px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+
+        button {
+            font-size: 1.1rem;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            background-color: #3498db;
+            color: #fff;
+            outline: none;
+        }
+
+        button.stop {
+            background-color: #e74c3c;
+        }
+
+        button.reset {
+            background-color: #95a5a6;
+        }
+
+        button:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            box-shadow: none;
+        }
+
+        #textBox {
+            width: 100%;
+            height: 200px;
+            font-size: 1.1rem;
+            margin-top: 20px;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 6px;
+            resize: none;
+            background-color: #ecf0f1;
+            color: #2c3e50;
+            transition: border-color 0.3s ease;
+        }
+
+        #textBox:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-size: 1.2rem;
+            color: #7f8c8d;
+        }
+
+        #statusText {
+            font-weight: bold;
+        }
+
+        .recording {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Speech-to-Text </h1>
+        <button id="startBtn">Start Listening</button>
+        <button id="stopBtn" class="stop" disabled>Stop Listening</button>
+        <button id="resetBtn" class="reset">Reset</button>
+        <div id="status">Status: <span id="statusText">Not Listening</span></div>
+        <textarea id="textBox" readonly placeholder="Your speech will be transcribed here..."></textarea>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const textBox = document.getElementById('textBox');
+        const statusText = document.getElementById('statusText');
+
+        startBtn.addEventListener('click', function() {
+            fetch('/start-listening', { method: 'POST' })
+                .then(() => {
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    statusText.textContent = "Listening...";
+                    statusText.classList.add('recording');
+                    updateText();
+                });
+        });
+
+        stopBtn.addEventListener('click', function() {
+            fetch('/stop-listening', { method: 'POST' })
+                .then(() => {
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    statusText.textContent = "Not Listening";
+                    statusText.classList.remove('recording');
+                });
+        });
+
+        resetBtn.addEventListener('click', function() {
+            fetch('/reset', { method: 'POST' })
+                .then(() => {
+                    textBox.value = "";
+                    statusText.textContent = "Not Listening";
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                });
+        });
+
+        function updateText() {
+            setInterval(function() {
+                fetch('/get-text')
+                    .then(response => response.json())
+                    .then(data => {
+                        textBox.value = data.text;
+                    });
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
